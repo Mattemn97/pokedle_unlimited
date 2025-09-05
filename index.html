@@ -16,25 +16,25 @@
 
   <main class="w3-row-padding w3-margin-top">
     <!-- Pannello Dataset -->
-    <div class="w3-col w3-margin-bottom" style="width:33%">
+    <div class="w3-margin-bottom w3-third">
       <div class="w3-card w3-white w3-round-large">
         <header class="w3-container w3-padding w3-border-bottom">
           <h2 class="w3-large w3-margin-0" style="text-transform: uppercase;">PRIMA PASSO</h2>
         </header>
         <div class="w3-container w3-padding">
           <p class="w3-small w3-text-black">Scarica i dati dei Pokémon che rimarranno in locale. Puoi anche esportarli o importarli da file JSON.</p>
-          <p class="w3-small w3-text-grey">Gen I #001 - #151</p>
-          <p class="w3-small w3-text-grey">Gen II #152 - #251</p>
-          <p class="w3-small w3-text-grey">Gen III #252 - #386</p>
-          <p class="w3-small w3-text-grey">Gen IV #387 - #493</p>
-          <p class="w3-small w3-text-grey">Gen V #494 - #649</p>
-          <p class="w3-small w3-text-grey">Gen VI #650 - #721</p>
-          <p class="w3-small w3-text-grey">Gen VII #722 - #809</p>
-          <p class="w3-small w3-text-grey">Gen VIII #810 - #905</p>
-          <p class="w3-small w3-text-grey">Gen IX #906 - #1025</p>
+          <p class="w3-small w3-text-grey">Gen I — Kanto (001-151)</p>
+          <p class="w3-small w3-text-grey">Gen II — Johto (152-251)</p>
+          <p class="w3-small w3-text-grey">Gen III — Hoenn (252-386)</p>
+          <p class="w3-small w3-text-grey">Gen IV — Sinnoh (387-493)</p>
+          <p class="w3-small w3-text-grey">Gen V — Unova (494-649)</p>
+          <p class="w3-small w3-text-grey">Gen VI — Kalos (650-721)</p>
+          <p class="w3-small w3-text-grey">Gen VII — Alola (722-809)</p>
+          <p class="w3-small w3-text-grey">Gen VII — Alola (722-809)</p>
+          <p class="w3-small w3-text-grey">Gen IX — Paldea (906-1025)</p>
 
-          <label class="w3-small w3-text-grey">Numero Pokémon da scaricare</label>
-          <input id="downloadCount" class="w3-input w3-border w3-round" type="number" min="1" max="1025" value="151">
+          <label class="w3-small w3-text-grey">Indica quali Pokémon scaricare, puoi indicare un numero (es. 151) o un range (es. 120-160).</label>
+          <input id="downloadCount" class="w3-input w3-border w3-round" type="text" value="151">
 
           <button id="btnDownload" class="w3-button w3-purple w3-round w3-margin-top w3-block">
             Scarica/aggiorna dati
@@ -55,15 +55,15 @@
     </div>
 
     <!-- Pannello Gioco -->
-    <div class="w3-col" style="width:66%">
+    <div class="w3-twothird">
       <div class="w3-card w3-white w3-round-large">
         <header class="w3-container w3-padding w3-border-bottom">
           <div class="w3-row">
-            <div class="w3-col s8">
+            <div class="w3-third">
               <h2 class="w3-large w3-margin-0">SECONDO PASSO</h2>
               <p id="secretHint" class="w3-small w3-text-grey">Carica il database attuale per iniziare una nuova partita</p>
             </div>
-            <div class="w3-col s4 w3-right-align">
+            <div class="w3-right-align">
               <button id="btnNew" class="w3-button w3-purple w3-round" disabled>Nuova partita</button>
             </div>
           </div>
@@ -71,12 +71,12 @@
 
         <div class="w3-container w3-padding">
           <div class="w3-row-padding">
-            <div class="w3-col s12 m9">
+            <div class="w3-threequarter">
               <label for="guessInput" class="w3-small w3-text-grey">Inserisci/Seleziona Pokémon</label>
               <input list="pokemonList" id="guessInput" class="w3-input w3-border w3-round" placeholder="Es. Bulbasaur">
               <datalist id="pokemonList"></datalist>
             </div>
-            <div class="w3-col s12 m3">
+            <div class="w3-quarter">
               <label class="w3-small w3-text-grey">&nbsp;</label>
               <button id="btnGuess" class="w3-button w3-purple w3-round w3-block">Prova!</button>
             </div>
