@@ -1,0 +1,37 @@
+/* Stili aggiuntivi per Pokedle Offline
+   Commenti in italiano. Usa W3.CSS come base. */
+
+body {
+  min-height: 100vh;
+}
+
+
+/* Migliora la tabella su schermi piccoli */
+@media (max-width: 600px) {
+  table.w3-table thead { display: none; }
+  table.w3-table tr { display: block; margin-bottom: 8px; }
+  table.w3-table td { display: flex; justify-content: space-between; padding: 8px 12px; }
+  table.w3-table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    margin-right: 12px;
+  }
+}
+
+ok {
+  background-color: #4CAF50 !important; /* verde */
+  color: white;
+  font-weight: bold;
+}
+
+ko {
+  background-color: #f44336 !important; /* rosso */
+  color: white;
+  font-weight: bold;
+}
+
+hint {
+  background-color: #ffe600 !important; /* arancione */
+  color: white;
+  font-weight: bold;
+}
