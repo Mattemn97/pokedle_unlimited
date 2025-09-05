@@ -1,6 +1,6 @@
 /* 
   Pokedle Offline — tutto in locale dopo la prima attivazione.
-  Commenti in italiano.
+  Ora usa lo stadio evolutivo invece della natura.
 */
 
 const STORAGE_KEY = 'pokemonDataV1';
@@ -8,13 +8,12 @@ let DATASET = [];
 let SECRET = null;
 let GUESSES = [];
 
-// Lista natures (italiano) — lista di esempio
-const NATURES = [
-  'Ardita','Placida','Audace','Birbona','Irruenta',
-  'Lesta','Timida','Scaltra','Ardita*','Quieta',
-  'Docile','Rilassata','Serena','Careful','Furba',
-  'Modesta','Mite','Calma','Gentile','Rash',
-  'Decisa','Schiva','Allegra','Ingenua','Seria'
+// Lista stadi evolutivi (da singolo a finale)
+const EVOLUTION_STAGES = [
+  'Singolo',     // Pokémon senza evoluzioni
+  'Base',        // Prima evoluzione
+  'Intermedio',  // Evoluzione intermedia
+  'Finale'       // Ultima evoluzione
 ];
 
 // Mappa generation name -> numero
@@ -27,7 +26,7 @@ function generationNumber(apiName) {
   return map[apiName] || null;
 }
 
-// Hash semplice per determinare la natura (coerente)
+// Hash semplice per determinare lo stadio evolutivo (coerente)
 function simpleHash(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) {
@@ -35,8 +34,8 @@ function simpleHash(str) {
   }
   return Math.abs(h);
 }
-function natureFor(name) {
-  return NATURES[simpleHash(name) % NATURES.length];
+function evolutionStageFor(name) {
+  return EVOLUTION_STAGES[simpleHash(name) % EVOLUTION_STAGES.length];
 }
 
 // Utility UI
@@ -86,7 +85,7 @@ function newSecret() {
   SECRET = DATASET[(Math.random() * DATASET.length) | 0];
   GUESSES = [];
   $('#guessesBody').innerHTML = '';
-  $('#secretHint').textContent = `Ho scelto un Pokémon fra ${DATASET.length} disponibili. Buona fortuna!`;
+  $('#secretHint').textContent = `Ho scelto un Pokémon fra ${DATASET.length} disponibili.`;
   $('#btnNew').disabled = false;
 }
 
@@ -111,7 +110,7 @@ function pushGuessRow(p) {
   const genCls = p.generation === s.generation ? 'ok' : 'ko';
   const t1Cls  = p.type1 === s.type1 ? 'ok' : 'ko';
   const t2Cls  = (p.type2 || '-') === (s.type2 || '-') ? 'ok' : 'ko';
-  const natCls = p.nature === s.nature ? 'ok' : 'ko';
+  const evoCls = p.evolutionStage === s.evolutionStage ? 'ok' : 'ko';
   const colCls = p.color === s.color ? 'ok' : 'ko';
 
   const hCmp = compareNumber(p.height_m, s.height_m);
@@ -122,7 +121,7 @@ function pushGuessRow(p) {
   td(p.generation, genCls);
   td(p.type1, t1Cls);
   td(p.type2 || '-', t2Cls);
-  td(p.nature, natCls);
+  td(p.evolutionStage, evoCls);
   td(p.color, colCls);
   td(p.height_m.toFixed(2) + (hCmp==='eq' ? ' ✓' : hCmp==='up' ? ' ↑' : ' ↓'), hCmp==='eq' ? 'ok' : 'hint');
   td(p.weight_kg.toFixed(1) + (wCmp==='eq' ? ' ✓' : wCmp==='up' ? ' ↑' : ' ↓'), wCmp==='eq' ? 'ok' : 'hint');
@@ -158,22 +157,27 @@ function doGuess() {
 }
 
 // Scarica dati da PokeAPI (solo prima attivazione o aggiornamento)
+// Scarica dati da PokeAPI (solo prima attivazione o aggiornamento)
 async function downloadData(limit) {
   setStatus('Preparazione download…');
   const out = [];
   const total = Number(limit) || 151;
+
   for (let id = 1; id <= total; id++) {
     try {
       setStatus(`Scarico #${id}/${total}…`);
+
+      // Pokémon
       const pResp = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
       if (!pResp.ok) throw new Error('pokemon fetch failed');
       const p = await pResp.json();
 
+      // Specie
       const sResp = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
       if (!sResp.ok) throw new Error('species fetch failed');
       const s = await sResp.json();
 
-      // Nome italiano se presente
+      // Nome italiano
       let italianName = null;
       if (Array.isArray(s.names)) {
         const it = s.names.find(n => n.language?.name === 'it');
@@ -188,6 +192,32 @@ async function downloadData(limit) {
       const color = s.color?.name || null;
       const name = p.name;
 
+      // Evoluzione: leggiamo la catena evolutiva
+      let evoStage = 'Singolo'; // default
+      if (s.evolution_chain?.url) {
+        const evoResp = await fetch(s.evolution_chain.url);
+        if (evoResp.ok) {
+          const evoData = await evoResp.json();
+          const findStage = (chain, targetName, level = 1) => {
+            if (chain.species.name === targetName) return level;
+            for (const evo of chain.evolves_to) {
+              const res = findStage(evo, targetName, level + 1);
+              if (res) return res;
+            }
+            return null;
+          };
+          const stageNum = findStage(evoData.chain, name);
+          // mappiamo il numero in stadio descrittivo
+          if (stageNum === 1 && evoData.chain.evolves_to.length === 0) evoStage = 'Singolo';
+          else if (stageNum === 1) evoStage = 'Base';
+          else if (stageNum === 2) evoStage = 'Intermedio';
+          else if (stageNum >= 3) evoStage = 'Finale';
+        }
+      }
+
+      // Luoghi cattura (habitat se presente)
+      const habitats = s.habitat?.name || 'Sconosciuto';
+
       out.push({
         id,
         name,
@@ -195,22 +225,27 @@ async function downloadData(limit) {
         generation: genNum,
         type1,
         type2,
-        nature: natureFor(name),
+        evolutionStage: evoStage,
         color,
         height_m,
-        weight_kg
+        weight_kg,
+        habitat: habitats
       });
+
       setCount(out.length);
+
     } catch (e) {
       console.error('Errore su id', id, e);
       // Continua comunque
     }
   }
+
   setStatus('Salvataggio locale…');
   saveDataset(out);
   setStatus('Completato.');
   return out;
 }
+
 
 // Esporta dataset su file
 function exportDataset() {
@@ -284,7 +319,7 @@ function init() {
   if (DATASET.length) {
     buildNameList();
     $('#btnNew').disabled = false;
-    $('#secretHint').textContent = `Pronto! Dataset in cache (${DATASET.length}). Clicca "Nuova partita".`;
+    $('#secretHint').textContent = `Database caricato con (${DATASET.length}) Pokémon.`;
   } else {
     setStatus('Nessun dataset in locale. Scaricalo o importalo.');
   }
