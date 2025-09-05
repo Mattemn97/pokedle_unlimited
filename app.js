@@ -157,15 +157,20 @@ function doGuess() {
 }
 
 // Scarica dati da PokeAPI (solo prima attivazione o aggiornamento)
-// Scarica dati da PokeAPI (solo prima attivazione o aggiornamento)
-async function downloadData(limit) {
-  setStatus('Preparazione download…');
-  const out = [];
-  const total = Number(limit) || 151;
+async function downloadData(rangeInput) {
+  const parsed = parseRangeInput(rangeInput);
+  if (!parsed) {
+    toast("Input non valido. Usa un numero (es. 151) o un range (es. 120-160).", false);
+    return [];
+  }
 
-  for (let id = 1; id <= total; id++) {
+  const { start, end } = parsed;
+  setStatus(`Preparazione download ${start}-${end}…`);
+  const out = [];
+
+  for (let id = start; id <= end; id++) {
     try {
-      setStatus(`Scarico #${id}/${total}…`);
+      setStatus(`Scarico #${id}/${end}…`);
 
       // Pokémon
       const pResp = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
@@ -187,13 +192,13 @@ async function downloadData(limit) {
       const genNum = generationNumber(s.generation?.name);
       const type1 = p.types?.[0]?.type?.name || null;
       const type2 = p.types?.[1]?.type?.name || null;
-      const height_m = (p.height || 0) / 10.0; // decimetri -> metri
-      const weight_kg = (p.weight || 0) / 10.0; // ettogrammi -> kg
+      const height_m = (p.height || 0) / 10.0;
+      const weight_kg = (p.weight || 0) / 10.0;
       const color = s.color?.name || null;
       const name = p.name;
 
-      // Evoluzione: leggiamo la catena evolutiva
-      let evoStage = 'Singolo'; // default
+      // Evoluzione
+      let evoStage = 'Singolo';
       if (s.evolution_chain?.url) {
         const evoResp = await fetch(s.evolution_chain.url);
         if (evoResp.ok) {
@@ -207,7 +212,6 @@ async function downloadData(limit) {
             return null;
           };
           const stageNum = findStage(evoData.chain, name);
-          // mappiamo il numero in stadio descrittivo
           if (stageNum === 1 && evoData.chain.evolves_to.length === 0) evoStage = 'Singolo';
           else if (stageNum === 1) evoStage = 'Base';
           else if (stageNum === 2) evoStage = 'Intermedio';
@@ -215,7 +219,6 @@ async function downloadData(limit) {
         }
       }
 
-      // Luoghi cattura (habitat se presente)
       const habitats = s.habitat?.name || 'Sconosciuto';
 
       out.push({
@@ -236,7 +239,6 @@ async function downloadData(limit) {
 
     } catch (e) {
       console.error('Errore su id', id, e);
-      // Continua comunque
     }
   }
 
@@ -245,6 +247,7 @@ async function downloadData(limit) {
   setStatus('Completato.');
   return out;
 }
+
 
 
 // Esporta dataset su file
@@ -284,14 +287,15 @@ function importDataset(file) {
 function init() {
   // Bottoni
   $('#btnDownload').addEventListener('click', async () => {
-    const n = $('#downloadCount').value;
+    const input = $('#downloadCount').value;
     setStatus('Avvio download…');
-    DATASET = await downloadData(n);
+    DATASET = await downloadData(input);
     setCount(DATASET.length);
     buildNameList();
     $('#btnNew').disabled = false;
-    toast('Dati scaricati e salvati offline!');
+    if (DATASET.length) toast('Dati scaricati e salvati offline!');
   });
+
 
   $('#btnExport').addEventListener('click', exportDataset);
   $('#fileImport').addEventListener('change', e => {
@@ -324,5 +328,21 @@ function init() {
     setStatus('Nessun dataset in locale. Scaricalo o importalo.');
   }
 }
+
+function parseRangeInput(input) {
+  const rangeMatch = /^(\d+)\s*-\s*(\d+)$/.exec(input);
+  if (rangeMatch) {
+    let start = parseInt(rangeMatch[1], 10);
+    let end = parseInt(rangeMatch[2], 10);
+    if (start > end) [start, end] = [end, start]; // inverti se l’utente scrive 200-150
+    return { start, end };
+  }
+  const n = parseInt(input, 10);
+  if (!isNaN(n) && n > 0) {
+    return { start: 1, end: n };
+  }
+  return null;
+}
+
 
 document.addEventListener('DOMContentLoaded', init);
