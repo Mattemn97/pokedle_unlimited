@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pokedle Offline</title>
+  <!-- W3.CSS: per uso completamente offline, salva w3.css nella stessa cartella -->
+  <link rel="stylesheet" href="w3.css">
+  <!-- Fallback CDN opzionale (se sei online) -->
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" onerror="">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="w3-light-grey">
+  <header class="w3-container w3-purple w3-padding-16">
+    <h1 class="w3-xxlarge">Pokedle Offline</h1>
+    <p class="w3-opacity">Indovina il Pokémon usando gli indizi — completamente offline dopo la prima attivazione.</p>
+  </header>
+
+  <main class="w3-content w3-margin-top" style="max-width:1100px">
+    <div class="w3-row-padding">
+      <!-- Pannello Dataset -->
+      <section class="w3-col l4 m12 s12 w3-margin-bottom">
+        <div class="w3-card w3-white w3-round-large">
+          <header class="w3-container w3-padding w3-border-bottom">
+            <h2 class="w3-large w3-margin-0">Dataset</h2>
+          </header>
+          <div class="w3-container w3-padding">
+            <p class="w3-small w3-text-grey">Alla prima attivazione scarica i dati e rimangono in locale (localStorage). Puoi anche esportarli o importarli da file JSON.</p>
+
+            <label class="w3-small w3-text-grey">Numero Pokémon da scaricare</label>
+            <input id="downloadCount" class="w3-input w3-border w3-round" type="number" min="1" max="1025" value="151">
+
+            <button id="btnDownload" class="w3-button w3-purple w3-round w3-margin-top w3-block">
+              Scarica/aggiorna dati
+            </button>
+
+            <div class="w3-margin-top">
+              <button id="btnExport" class="w3-button w3-border w3-round w3-block">Esporta dataset</button>
+              <label for="fileImport" class="w3-button w3-border w3-round w3-block w3-margin-top">Importa dataset</label>
+              <input id="fileImport" type="file" accept="application/json" class="w3-hide">
+            </div>
+
+            <div class="w3-margin-top w3-small">
+              <div>Stato: <span id="status">in attesa…</span></div>
+              <div>Pokémon caricati: <span id="count">0</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pannello Gioco -->
+      <section class="w3-col l8 m12 s12">
+        <div class="w3-card w3-white w3-round-large">
+          <header class="w3-container w3-padding w3-border-bottom">
+            <div class="w3-row">
+              <div class="w3-col s8">
+                <h2 class="w3-large w3-margin-0">Gioco</h2>
+                <p id="secretHint" class="w3-small w3-text-grey">Carica il dataset per iniziare ✨</p>
+              </div>
+              <div class="w3-col s4 w3-right-align">
+                <button id="btnNew" class="w3-button w3-purple w3-round" disabled>Nuova partita</button>
+              </div>
+            </div>
+          </header>
+
+          <div class="w3-container w3-padding">
+            <div class="w3-row-padding">
+              <div class="w3-col s12 m9">
+                <label for="guessInput" class="w3-small w3-text-grey">Inserisci/Seleziona Pokémon</label>
+                <input list="pokemonList" id="guessInput" class="w3-input w3-border w3-round" placeholder="Es. Bulbasaur">
+                <datalist id="pokemonList"></datalist>
+              </div>
+              <div class="w3-col s12 m3">
+                <label class="w3-small w3-text-grey">&nbsp;</label>
+                <button id="btnGuess" class="w3-button w3-purple w3-round w3-block">Prova!</button>
+              </div>
+            </div>
+
+            <div class="w3-responsive w3-margin-top">
+              <table class="w3-table w3-striped w3-bordered w3-small w3-centered">
+                <thead>
+                  <tr class="w3-light-grey">
+                    <th>#</th>
+                    <th>Nome</th>
+                    <th>Gen</th>
+                    <th>Tipo1</th>
+                    <th>Tipo2</th>
+                    <th>Natura</th>
+                    <th>Colore</th>
+                    <th>Altezza (m)</th>
+                    <th>Peso (kg)</th>
+                  </tr>
+                </thead>
+                <tbody id="guessesBody"></tbody>
+              </table>
+            </div>
+
+            <div id="result" class="w3-panel w3-hide w3-round w3-margin-top"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="w3-center w3-small w3-padding-16 w3-text-grey">
+    <span>Made with 🧪 + W3.CSS — completamente client-side.</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
