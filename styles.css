@@ -18,20 +18,21 @@ body {
   }
 }
 
-ok {
-  background-color: #4CAF50 !important; /* verde */
-  color: white;
+.ok {
+  background-color: hsl(120deg 100% 50% / 50%) !important; /* verde */
+  color: #000;
   font-weight: bold;
 }
 
-ko {
-  background-color: #f44336 !important; /* rosso */
-  color: white;
+.ko {
+  background-color: hsl(0deg 100% 50% / 50%) !important; /* rosso */
+  color: #000;
   font-weight: bold;
 }
 
-hint {
-  background-color: #ffe600 !important; /* arancione */
-  color: white;
+.hint {
+  background-color: hsl(50deg 100% 50% / 50%) !important; /* arancione */
+  color: #000;
   font-weight: bold;
 }
+
