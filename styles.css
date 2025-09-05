@@ -18,21 +18,21 @@ body {
   }
 }
 
+
 .ok {
-  background-color: hsl(120deg 100% 50% / 50%) !important; /* verde */
-  color: #000;
+  background-color: hsl(127, 100%, 50%) !important; /* verde */
+  color: black;
   font-weight: bold;
 }
 
 .ko {
-  background-color: hsl(0deg 100% 50% / 50%) !important; /* rosso */
-  color: #000;
+  background-color: hsl(0, 100%, 50%) !important; /* rosso */
+  color: black;
   font-weight: bold;
 }
 
 .hint {
-  background-color: hsl(50deg 100% 50% / 50%) !important; /* arancione */
-  color: #000;
+  background-color: hsl(50, 100%, 50%) !important; /* arancione */
+  color: black;
   font-weight: bold;
 }
-
