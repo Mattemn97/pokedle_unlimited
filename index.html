@@ -3,113 +3,98 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pokedle Offline</title>
-  <!-- Fallback CDN opzionale (se sei online) -->
-  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" onerror="">
+  <title>Pokedle Unlimited · Matteo Filippini</title>
+  <meta name="description" content="Indovina il Pokémon dagli indizi, quante volte vuoi. Funziona offline dopo il primo download dei dati.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='78' font-size='80' text-anchor='middle'>🎯</text></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="mf-theme.css">
   <link rel="stylesheet" href="styles.css">
+  <script src="mf-theme.js"></script>
 </head>
-<body class="w3-light-grey">
-  <header class="w3-container w3-purple">
-    <h1 class="w3-xlarge">Pokedle Offline</h1>
-    <p class="w3-opacity">Indovina il Pokémon usando gli indizi — completamente offline dopo la prima attivazione.</p>
+<body>
+  <header class="mf-topbar">
+    <a class="mf-home" href="https://mattemn97.github.io/" title="Torna al sito di Matteo Filippini"><span class="mf-mark">MF</span><span class="mf-home-name">Matteo Filippini</span></a>
+    <span class="mf-sep">/</span>
+    <h1 class="mf-app-title">Pokedle Unlimited</h1>
+    <div class="mf-topbar-actions">
+      <a class="mf-icon-btn" href="https://github.com/Mattemn97/pokedle_unlimited" target="_blank" rel="noopener" aria-label="Codice su GitHub"><i class="fa-brands fa-github"></i></a>
+      <button class="mf-icon-btn" id="mfTheme" type="button" aria-label="Cambia tema"><i class="fa-solid fa-circle-half-stroke"></i></button>
+    </div>
   </header>
 
-  <main class="w3-row-padding w3-margin-top">
-    <!-- Pannello Dataset -->
-    <div class="w3-margin-bottom w3-third">
-      <div class="w3-card w3-white w3-round-large">
-        <header class="w3-container w3-padding w3-border-bottom">
-          <h2 class="w3-large w3-margin-0" style="text-transform: uppercase;">PRIMA PASSO</h2>
-        </header>
-        <div class="w3-container w3-padding">
-          <p class="w3-small w3-text-black">Scarica i dati dei Pokémon che rimarranno in locale. Puoi anche esportarli o importarli da file JSON.</p>
-          <p class="w3-small w3-text-grey">Gen I — Kanto (001-151)</p>
-          <p class="w3-small w3-text-grey">Gen II — Johto (152-251)</p>
-          <p class="w3-small w3-text-grey">Gen III — Hoenn (252-386)</p>
-          <p class="w3-small w3-text-grey">Gen IV — Sinnoh (387-493)</p>
-          <p class="w3-small w3-text-grey">Gen V — Unova (494-649)</p>
-          <p class="w3-small w3-text-grey">Gen VI — Kalos (650-721)</p>
-          <p class="w3-small w3-text-grey">Gen VII — Alola (722-809)</p>
-          <p class="w3-small w3-text-grey">Gen VII — Alola (722-809)</p>
-          <p class="w3-small w3-text-grey">Gen IX — Paldea (906-1025)</p>
+  <main class="mf-main">
+    <section class="mf-hero">
+      <p class="mf-eyebrow">// chi è quel Pokémon?</p>
+      <h1>Pokedle Unlimited</h1>
+      <p>Indovina il Pokémon segreto usando gli indizi: generazione, tipi, stadio evolutivo, colore, altezza e peso. Gioca quante volte vuoi: dopo il primo download funziona anche offline.</p>
+    </section>
 
-          <label class="w3-small w3-text-grey">Indica quali Pokémon scaricare, puoi indicare un numero (es. 151) o un range (es. 120-160).</label>
-          <input id="downloadCount" class="w3-input w3-border w3-round" type="text" value="151">
+    <div class="layout">
+      <!-- Pannello dati -->
+      <section class="mf-card">
+        <div class="mf-card-head"><h2><span class="mf-step">1</span> Scarica i Pokémon</h2></div>
+        <p class="muted small">I dati vengono scaricati da PokeAPI e salvati nel browser. Puoi anche esportarli o importarli da file JSON.</p>
 
-          <button id="btnDownload" class="w3-button w3-purple w3-round w3-margin-top w3-block">
-            Scarica/aggiorna dati
-          </button>
+        <p class="mf-label">Scegli una generazione…</p>
+        <div class="mf-chips gens" id="gens"></div>
 
-          <div class="w3-margin-top">
-            <button id="btnExport" class="w3-button w3-border w3-round w3-block">Esporta dataset</button>
-            <label for="fileImport" class="w3-button w3-border w3-round w3-block w3-margin-top">Importa dataset</label>
-            <input id="fileImport" type="file" accept="application/json" class="w3-hide">
-          </div>
+        <label class="mf-label" for="downloadCount">…oppure un numero (es. 151) o un intervallo (es. 120-160)</label>
+        <input id="downloadCount" class="mf-input" type="text" value="151" inputmode="numeric">
 
-          <div class="w3-margin-top w3-small">
-            <div>Stato: <span id="status">-</span></div>
-            <div>Pokémon nel database attuale: <span id="count">0</span></div>
-          </div>
+        <button id="btnDownload" class="mf-btn mf-btn-primary mf-btn-block top"><i class="fa-solid fa-cloud-arrow-down"></i> Scarica / aggiorna dati</button>
+        <div class="row-2 top">
+          <button id="btnExport" class="mf-btn"><i class="fa-solid fa-file-export"></i> Esporta</button>
+          <label for="fileImport" class="mf-btn"><i class="fa-solid fa-file-import"></i> Importa</label>
+          <input id="fileImport" type="file" accept="application/json" class="hidden">
         </div>
-      </div>
-    </div>
 
-    <!-- Pannello Gioco -->
-    <div class="w3-twothird">
-      <div class="w3-card w3-white w3-round-large">
-        <header class="w3-container w3-padding w3-border-bottom">
-          <div class="w3-row">
-            <div class="w3-third">
-              <h2 class="w3-large w3-margin-0">SECONDO PASSO</h2>
-              <p id="secretHint" class="w3-small w3-text-grey">Carica il database attuale per iniziare una nuova partita</p>
-            </div>
-            <div class="w3-right-align">
-              <button id="btnNew" class="w3-button w3-purple w3-round" disabled>Nuova partita</button>
-            </div>
+        <div class="progress top" aria-hidden="true"><div id="progressBar"></div></div>
+        <dl class="status">
+          <div><dt>Stato</dt><dd id="status">-</dd></div>
+          <div><dt>Pokémon salvati</dt><dd><span id="count" class="mono">0</span></dd></div>
+        </dl>
+      </section>
+
+      <!-- Pannello gioco -->
+      <section class="mf-card">
+        <div class="mf-card-head">
+          <div>
+            <h2><span class="mf-step">2</span> Indovina</h2>
+            <p id="secretHint" class="muted small no-margin">Carica i dati per iniziare una nuova partita.</p>
           </div>
-        </header>
-
-        <div class="w3-container w3-padding">
-          <div class="w3-row-padding">
-            <div class="w3-threequarter">
-              <label for="guessInput" class="w3-small w3-text-grey">Inserisci/Seleziona Pokémon</label>
-              <input list="pokemonList" id="guessInput" class="w3-input w3-border w3-round" placeholder="Es. Bulbasaur">
-              <datalist id="pokemonList"></datalist>
-            </div>
-            <div class="w3-quarter">
-              <label class="w3-small w3-text-grey">&nbsp;</label>
-              <button id="btnGuess" class="w3-button w3-purple w3-round w3-block">Prova!</button>
-            </div>
-          </div>
-
-          <div class="w3-responsive w3-margin-top">
-            <table class="w3-table w3-striped w3-bordered w3-small w3-centered">
-              <thead>
-                <tr class="w3-light-grey">
-                  <th>#</th>
-                  <th>Nome</th>
-                  <th>Gen</th>
-                  <th>Tipo1</th>
-                  <th>Tipo2</th>
-                  <th>Stadio Evolutivo</th>
-                  <th>Colore</th>
-                  <th>Altezza (m)</th>
-                  <th>Peso (kg)</th>
-                </tr>
-              </thead>
-              <tbody id="guessesBody"></tbody>
-            </table>
-          </div>
-
-          <div id="result" class="w3-panel w3-hide w3-round w3-margin-top"></div>
+          <button id="btnNew" class="mf-btn mf-btn-primary" disabled><i class="fa-solid fa-shuffle"></i> Nuova partita</button>
         </div>
-      </div>
+
+        <div class="guess-row">
+          <div class="mf-search grow">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input list="pokemonList" id="guessInput" class="mf-input" placeholder="Es. Bulbasaur" autocomplete="off" aria-label="Nome del Pokémon">
+            <datalist id="pokemonList"></datalist>
+          </div>
+          <button id="btnGuess" class="mf-btn mf-btn-primary"><i class="fa-solid fa-paper-plane"></i> Prova!</button>
+        </div>
+
+        <div class="legend small muted">
+          <span><i class="sw ok"></i> giusto</span><span><i class="sw ko"></i> sbagliato</span><span><i class="sw hint"></i> più alto ↑ / più basso ↓</span>
+          <span class="attempts">Tentativi: <strong id="attempts">0</strong></span>
+        </div>
+
+        <div id="result" class="mf-alert hidden"></div>
+        <div id="winCard" class="win hidden"></div>
+
+        <div class="mf-table-wrap top">
+          <table class="mf-table guesses">
+            <thead>
+              <tr><th>#</th><th>Nome</th><th>Gen</th><th>Tipo 1</th><th>Tipo 2</th><th>Stadio</th><th>Colore</th><th>Altezza (m)</th><th>Peso (kg)</th></tr>
+            </thead>
+            <tbody id="guessesBody"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </main>
 
-  <footer class="w3-center w3-small w3-padding-16 w3-text-grey">
-    <span>Made with 🧪 + W3.CSS — completamente client-side.</span>
-  </footer>
+  <footer class="mf-footer">Dati da <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokeAPI</a> · tutto avviene nel tuo browser · <a href="https://mattemn97.github.io/">mattemn97.github.io</a></footer>
 
   <script src="app.js"></script>
 </body>

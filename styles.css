@@ -1,38 +1,53 @@
-/* Stili aggiuntivi per Pokedle Offline
-   Commenti in italiano. Usa W3.CSS come base. */
+/* Pokedle Unlimited · stili specifici (il resto è in mf-theme.css) */
 
-body {
-  min-height: 100vh;
+.layout { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+.top { margin-top: .9rem; }
+.no-margin { margin: .2rem 0 0; }
+.grow { flex: 1 1 240px; }
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.gens { margin-bottom: 1rem; }
+.gens .mf-chip { font-size: .78rem; padding: .3rem .65rem; }
+
+.progress { height: 6px; border-radius: 4px; background: var(--bg-2); overflow: hidden; }
+#progressBar { height: 100%; width: 0; background: var(--gradient); transition: width .3s; }
+.status { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin: .9rem 0 0; }
+.status div { background: var(--bg-2); border-radius: 10px; padding: .55rem .75rem; }
+.status dt { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.status dd { margin: 0; font-weight: 600; font-size: .9rem; }
+
+.guess-row { display: flex; flex-wrap: wrap; gap: .6rem; }
+.legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: center; margin-top: .8rem; }
+.legend .attempts { margin-left: auto; }
+.sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: -1px; margin-right: .2rem; }
+.sw.ok, td.ok { background: color-mix(in srgb, var(--ok) 28%, transparent); }
+.sw.ko, td.ko { background: color-mix(in srgb, var(--err) 22%, transparent); }
+.sw.hint, td.hint { background: color-mix(in srgb, var(--warn) 28%, transparent); }
+td.ok, td.ko, td.hint { font-weight: 600; }
+
+.guesses td, .guesses th { text-align: center; white-space: nowrap; }
+.guesses td:nth-child(2) { text-align: left; font-weight: 600; }
+.guesses tbody tr:first-child { animation: flip .5s ease both; }
+@keyframes flip { from { opacity: 0; transform: rotateX(-80deg); } to { opacity: 1; transform: none; } }
+
+.win {
+  display: flex; gap: 1rem; align-items: center; margin-top: 1rem; padding: 1rem 1.2rem; border-radius: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent), color-mix(in srgb, var(--primary-2) 18%, transparent));
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent); animation: pop .5s cubic-bezier(.2, 1.4, .4, 1) both;
 }
+.win img { width: 110px; height: 110px; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .25)); }
+.win h3 { margin: 0 0 .2rem; font-size: 1.3rem; }
+.win p { margin: 0; color: var(--muted); }
+@keyframes pop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
 
-
-/* Migliora la tabella su schermi piccoli */
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+}
+/* tabella a schede su schermi piccoli */
 @media (max-width: 600px) {
-  table.w3-table thead { display: none; }
-  table.w3-table tr { display: block; margin-bottom: 8px; }
-  table.w3-table td { display: flex; justify-content: space-between; padding: 8px 12px; }
-  table.w3-table td::before {
-    content: attr(data-label);
-    font-weight: bold;
-    margin-right: 12px;
-  }
-}
-
-
-.ok {
-  background-color: hsl(127, 100%, 50%) !important; /* verde */
-  color: black;
-  font-weight: bold;
-}
-
-.ko {
-  background-color: hsl(0, 100%, 50%) !important; /* rosso */
-  color: black;
-  font-weight: bold;
-}
-
-.hint {
-  background-color: hsl(50, 100%, 50%) !important; /* arancione */
-  color: black;
-  font-weight: bold;
+  .guesses thead { display: none; }
+  .guesses tr { display: block; border-top: 1px solid var(--border); padding: .4rem 0; }
+  .guesses td { display: flex; justify-content: space-between; border: 0; padding: .35rem .8rem; text-align: right; }
+  .guesses td::before { content: attr(data-label); font-weight: 600; color: var(--muted); margin-right: 1rem; }
+  .guesses td:nth-child(2) { text-align: right; }
+  .win img { width: 80px; height: 80px; }
 }

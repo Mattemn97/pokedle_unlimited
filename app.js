@@ -44,10 +44,41 @@ function setStatus(text) { $('#status').textContent = text; }
 function setCount(n) { $('#count').textContent = String(n); }
 function toast(msg, ok=true) {
   const el = $('#result');
-  el.className = 'w3-panel w3-round w3-margin-top ' + (ok ? 'w3-pale-green w3-border w3-border-green' : 'w3-pale-red w3-border w3-border-red');
+  el.className = 'mf-alert ' + (ok ? 'ok' : 'err');
   el.textContent = msg;
-  el.classList.remove('w3-hide');
-  setTimeout(() => el.classList.add('w3-hide'), 3000);
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.add('hidden'), 3000);
+}
+function setProgress(done, total) {
+  $('#progressBar').style.width = total ? Math.round(done / total * 100) + '%' : '0';
+}
+function setAttempts() { $('#attempts').textContent = String(GUESSES.length); }
+
+// Generazioni: un clic imposta l'intervallo da scaricare
+const GENERATIONS = [
+  ['I', 'Kanto', 1, 151], ['II', 'Johto', 152, 251], ['III', 'Hoenn', 252, 386], ['IV', 'Sinnoh', 387, 493],
+  ['V', 'Unima', 494, 649], ['VI', 'Kalos', 650, 721], ['VII', 'Alola', 722, 809], ['VIII', 'Galar', 810, 905],
+  ['IX', 'Paldea', 906, 1025]
+];
+function buildGenerations() {
+  const box = $('#gens');
+  box.innerHTML = GENERATIONS.map(([n, r, a, b]) =>
+    `<button type="button" class="mf-chip" data-range="${a}-${b}" title="${r} · ${a}-${b}">Gen ${n} · ${r}</button>`).join('') +
+    `<button type="button" class="mf-chip" data-range="1-1025" title="Tutti i Pokémon (lento)">Tutte</button>`;
+  box.addEventListener('click', e => {
+    const c = e.target.closest('[data-range]');
+    if (!c) return;
+    $('#downloadCount').value = c.dataset.range;
+    box.querySelectorAll('.mf-chip').forEach(x => x.classList.toggle('active', x === c));
+  });
+}
+
+function showWin(p) {
+  const card = $('#winCard');
+  const name = p.italianName || p.name;
+  card.innerHTML = `<img alt="${name}" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.id}.png" onerror="this.remove()">
+    <div><h3>🎉 Era ${name}!</h3><p>Indovinato in ${GUESSES.length} ${GUESSES.length === 1 ? 'tentativo' : 'tentativi'}. Premi «Nuova partita» per rigiocare.</p></div>`;
+  card.classList.remove('hidden');
 }
 
 // Carica dataset da localStorage
@@ -84,6 +115,8 @@ function newSecret() {
   if (!DATASET.length) return;
   SECRET = DATASET[(Math.random() * DATASET.length) | 0];
   GUESSES = [];
+  setAttempts();
+  $('#winCard').classList.add('hidden');
   $('#guessesBody').innerHTML = '';
   $('#secretHint').textContent = `Ho scelto un Pokémon fra ${DATASET.length} disponibili.`;
   $('#btnNew').disabled = false;
@@ -98,9 +131,11 @@ function compareNumber(guess, target) {
 // Aggiunge una riga nella tabella
 function pushGuessRow(p) {
   const tr = document.createElement('tr');
+  const labels = ['#', 'Nome', 'Gen', 'Tipo 1', 'Tipo 2', 'Stadio', 'Colore', 'Altezza (m)', 'Peso (kg)'];
   function td(val, cls='') {
     const el = document.createElement('td');
     el.textContent = val;
+    el.dataset.label = labels[tr.children.length];
     if (cls) el.className = cls;
     tr.appendChild(el);
   }
@@ -145,10 +180,11 @@ function doGuess() {
     return;
   }
   GUESSES.push(found);
+  setAttempts();
   pushGuessRow(found);
 
   if (found.id === SECRET.id) {
-    toast(`Bravo! Era ${found.italianName || found.name}.`);
+    showWin(found);
     $('#secretHint').textContent = 'Hai indovinato! Premi "Nuova partita" per rigiocare.';
   } else {
     $('#guessInput').value = '';
@@ -171,6 +207,7 @@ async function downloadData(rangeInput) {
   for (let id = start; id <= end; id++) {
     try {
       setStatus(`Scarico #${id}/${end}…`);
+      setProgress(id - start, end - start + 1);
 
       // Pokémon
       const pResp = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
@@ -245,6 +282,7 @@ async function downloadData(rangeInput) {
   setStatus('Salvataggio locale…');
   saveDataset(out);
   setStatus('Completato.');
+  setProgress(1, 1);
   return out;
 }
 
@@ -285,6 +323,7 @@ function importDataset(file) {
 
 // Inizializza app
 function init() {
+  buildGenerations();
   // Bottoni
   $('#btnDownload').addEventListener('click', async () => {
     const input = $('#downloadCount').value;
@@ -307,7 +346,7 @@ function init() {
 
   $('#btnNew').addEventListener('click', () => {
     newSecret();
-    $('#result').classList.add('w3-hide');
+    $('#result').classList.add('hidden');
     $('#guessInput').value = '';
     $('#guessInput').focus();
   });
