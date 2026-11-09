@@ -7,6 +7,11 @@ const STORAGE_KEY = 'pokemonDataV1';
 let DATASET = [];
 let SECRET = null;
 let GUESSES = [];
+let DOWNLOADING = false;
+
+// logger condiviso (mf-log.js); se manca, i log vengono ignorati
+const noop = () => {};
+const log = window.MFLog || { debug: noop, info: noop, warn: noop, error: noop, time: () => noop };
 
 // Lista stadi evolutivi (da singolo a finale)
 const EVOLUTION_STAGES = [
@@ -85,18 +90,29 @@ function showWin(p) {
 function loadDatasetFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) { log.info('dati', 'Nessun dataset salvato nel browser'); return []; }
     const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : [];
+    if (!Array.isArray(data)) { log.warn('dati', 'Dataset salvato in formato non valido, lo ignoro'); return []; }
+    log.info('dati', 'Dataset letto dal browser: ' + data.length + ' Pokémon (' + Math.round(raw.length / 1024) + ' KB)');
+    return data;
   } catch (e) {
-    console.warn('Errore lettura storage', e);
+    log.error('dati', 'Errore lettura dal localStorage: ' + e.message, e.stack);
     return [];
   }
 }
 
-// Salva dataset
+// Salva dataset (può fallire se il browser ha lo spazio pieno o in navigazione privata)
 function saveDataset(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const json = JSON.stringify(data);
+  try {
+    localStorage.setItem(STORAGE_KEY, json);
+    log.info('dati', 'Dataset salvato: ' + data.length + ' Pokémon (' + Math.round(json.length / 1024) + ' KB)');
+    return true;
+  } catch (e) {
+    log.error('dati', 'Salvataggio nel localStorage fallito (' + e.name + '): i dati restano solo finché la pagina è aperta', e.message);
+    toast('Non riesco a salvare i dati nel browser (spazio pieno?). Usa «Esporta» per non perderli.', false);
+    return false;
+  }
 }
 
 // Costruisci datalist dei nomi
@@ -112,8 +128,11 @@ function buildNameList() {
 
 // Scegli segreto
 function newSecret() {
-  if (!DATASET.length) return;
+  if (!DATASET.length) { log.warn('gioco', 'Nuova partita richiesta ma il dataset è vuoto'); return; }
   SECRET = DATASET[(Math.random() * DATASET.length) | 0];
+  // il nome del segreto si vede solo con il debug attivo, per non rovinare il gioco
+  log.info('gioco', 'Nuova partita su ' + DATASET.length + ' Pokémon');
+  log.debug('gioco', 'Segreto: #' + SECRET.id + ' ' + (SECRET.italianName || SECRET.name));
   GUESSES = [];
   setAttempts();
   $('#winCard').classList.add('hidden');
@@ -166,12 +185,18 @@ function pushGuessRow(p) {
 
 // Gestione tentativo
 function doGuess() {
-  if (!SECRET) return;
+  if (!SECRET) {
+    // prima causa del "non succede niente": partita mai iniziata
+    log.warn('gioco', 'Tentativo ignorato: nessuna partita in corso');
+    toast(DATASET.length ? 'Premi «Nuova partita» per iniziare.' : 'Prima scarica o importa i dati dei Pokémon.', false);
+    return;
+  }
   const name = $('#guessInput').value.trim().toLowerCase();
   if (!name) return;
 
   const found = DATASET.find(p => (p.italianName || p.name).toLowerCase() === name);
   if (!found) {
+    log.debug('gioco', 'Nome non trovato nel dataset: "' + name + '"');
     toast('Pokémon non trovato nel dataset. Controlla l’ortografia.', false);
     return;
   }
@@ -182,8 +207,10 @@ function doGuess() {
   GUESSES.push(found);
   setAttempts();
   pushGuessRow(found);
+  log.debug('gioco', 'Tentativo ' + GUESSES.length + ': ' + (found.italianName || found.name));
 
   if (found.id === SECRET.id) {
+    log.info('gioco', 'Indovinato in ' + GUESSES.length + ' tentativi');
     showWin(found);
     $('#secretHint').textContent = 'Hai indovinato! Premi "Nuova partita" per rigiocare.';
   } else {
@@ -196,27 +223,34 @@ function doGuess() {
 async function downloadData(rangeInput) {
   const parsed = parseRangeInput(rangeInput);
   if (!parsed) {
+    log.warn('download', 'Intervallo non valido: "' + rangeInput + '"');
     toast("Input non valido. Usa un numero (es. 151) o un range (es. 120-160).", false);
     return [];
   }
 
   const { start, end } = parsed;
+  const total = end - start + 1;
+  // 3 richieste per Pokémon, una dopo l'altra: con tanti Pokémon ci vogliono minuti
+  log.info('download', `Avvio download #${start}-${end}: ${total} Pokémon, circa ${total * 3} richieste a PokeAPI`);
+  const endAll = log.time('download', `Download #${start}-${end}`);
+  const failed = [];
   setStatus(`Preparazione download ${start}-${end}…`);
   const out = [];
 
   for (let id = start; id <= end; id++) {
     try {
       setStatus(`Scarico #${id}/${end}…`);
-      setProgress(id - start, end - start + 1);
+      setProgress(id - start, total);
+      const t0 = performance.now();
 
       // Pokémon
       const pResp = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-      if (!pResp.ok) throw new Error('pokemon fetch failed');
+      if (!pResp.ok) throw new Error(`pokemon/${id} ha risposto ${pResp.status}`);
       const p = await pResp.json();
 
       // Specie
       const sResp = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`);
-      if (!sResp.ok) throw new Error('species fetch failed');
+      if (!sResp.ok) throw new Error(`pokemon-species/${id} ha risposto ${sResp.status}`);
       const s = await sResp.json();
 
       // Nome italiano
@@ -238,6 +272,7 @@ async function downloadData(rangeInput) {
       let evoStage = 'Singolo';
       if (s.evolution_chain?.url) {
         const evoResp = await fetch(s.evolution_chain.url);
+        if (!evoResp.ok) log.warn('download', `#${id}: catena evolutiva non disponibile (${evoResp.status}), uso "Singolo"`);
         if (evoResp.ok) {
           const evoData = await evoResp.json();
           const findStage = (chain, targetName, level = 1) => {
@@ -273,15 +308,27 @@ async function downloadData(rangeInput) {
       });
 
       setCount(out.length);
+      log.debug('download', `#${id} ${italianName || name} in ${Math.round(performance.now() - t0)} ms (${out.length}/${total})`);
+      if (out.length % 25 === 0) log.info('download', `Avanzamento: ${out.length}/${total}`);
 
     } catch (e) {
-      console.error('Errore su id', id, e);
+      failed.push(id);
+      log.error('download', `#${id} saltato: ${e.message}`);
     }
   }
 
+  endAll({ scaricati: out.length, falliti: failed.length });
+  if (failed.length) log.warn('download', `${failed.length} Pokémon non scaricati`, failed);
+  if (!out.length) {
+    // non sovrascrivere i dati buoni con un download andato a vuoto
+    log.error('download', 'Nessun Pokémon scaricato: tengo il dataset precedente');
+    setStatus('Download fallito: controlla la connessione.');
+    toast('Download fallito: nessun Pokémon scaricato.', false);
+    return DATASET;
+  }
   setStatus('Salvataggio locale…');
   saveDataset(out);
-  setStatus('Completato.');
+  setStatus(failed.length ? `Completato, ${failed.length} non scaricati.` : 'Completato.');
   setProgress(1, 1);
   return out;
 }
@@ -308,13 +355,14 @@ function importDataset(file) {
       const data = JSON.parse(e.target.result);
       if (!Array.isArray(data) || !data.length) throw new Error('Formato non valido');
       DATASET = data;
+      log.info('dati', 'Importati ' + data.length + ' Pokémon da ' + file.name);
       saveDataset(DATASET);
       setCount(DATASET.length);
       buildNameList();
       $('#btnNew').disabled = false;
       toast('Dataset importato con successo.');
     } catch (err) {
-      console.error(err);
+      log.error('dati', 'Importazione di ' + file.name + ' fallita: ' + err.message);
       toast('Errore durante l’importazione.', false);
     }
   };
@@ -326,17 +374,32 @@ function init() {
   buildGenerations();
   // Bottoni
   $('#btnDownload').addEventListener('click', async () => {
-    const input = $('#downloadCount').value;
-    setStatus('Avvio download…');
-    DATASET = await downloadData(input);
-    setCount(DATASET.length);
-    buildNameList();
-    $('#btnNew').disabled = false;
-    if (DATASET.length) toast('Dati scaricati e salvati offline!');
+    // due download in parallelo si accavallano e sembrano bloccare la pagina
+    if (DOWNLOADING) { log.warn('download', 'Download già in corso, clic ignorato'); return; }
+    DOWNLOADING = true;
+    $('#btnDownload').disabled = true;
+    try {
+      const input = $('#downloadCount').value;
+      setStatus('Avvio download…');
+      DATASET = await downloadData(input);
+      setCount(DATASET.length);
+      buildNameList();
+      $('#btnNew').disabled = !DATASET.length;
+      if (DATASET.length) toast('Dati scaricati e salvati offline!');
+    } catch (e) {
+      log.error('download', 'Errore inatteso durante il download: ' + e.message, e.stack);
+      setStatus('Errore durante il download.');
+    } finally {
+      DOWNLOADING = false;
+      $('#btnDownload').disabled = false;
+    }
   });
 
 
-  $('#btnExport').addEventListener('click', exportDataset);
+  $('#btnExport').addEventListener('click', () => {
+    log.info('dati', 'Esporto ' + DATASET.length + ' Pokémon');
+    exportDataset();
+  });
   $('#fileImport').addEventListener('change', e => {
     if (e.target.files && e.target.files[0]) {
       importDataset(e.target.files[0]);
